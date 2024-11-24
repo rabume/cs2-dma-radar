@@ -64,6 +64,11 @@ Alternatively, you can use a service like [ngrok](https://ngrok.com/) to share y
 
 ## Offsets
 
+**Automate with GitHub Actions**
+
+- [ ] Add GitHub Actions to automatically update the offsets
+- [ ] Update faulty links in the text down below
+
 The offsets are stored in a file called `offsets.json` in the root directory of the application.
 To get the latest offsets you can use the [cs2-dumper](https://github.com/a2x/cs2-dumper) by a2x.
 If you don't want to dump them yourself, you can use the offsets from [offsets.rs](https://github.com/a2x/cs2-dumper/blob/main/output/offsets.rs) and [client.dll.hpp](https://github.com/a2x/cs2-dumper/blob/main/output/client.dll.hpp).

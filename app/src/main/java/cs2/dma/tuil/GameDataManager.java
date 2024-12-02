@@ -67,12 +67,17 @@ public class GameDataManager {
     private String mapName;
 
     private IVmm vmm;
+    private GameProcessMonitor processMonitor;
 
 
     public boolean initializeVmm() {
         this.vmm = IVmm.initializeVmm(System.getProperty("user.dir") + "\\vmm", argvMemProcFS);
-        vmm.setConfig(IVmm.VMMDLL_OPT_REFRESH_FREQ_FAST, 1);
-        return vmm.isValid();
+        vmm.setConfig(IVmm.VMMDLL_OPT_REFRESH_FAST, 1);
+        if (vmm.isValid()) {
+            this.processMonitor = new GameProcessMonitor(vmm);
+            return true;
+        }
+        return false;
     }
 
     public IVmm getVmm() {
@@ -84,72 +89,81 @@ public class GameDataManager {
     }
 
     public boolean initializeGameData() {
-        List<IVmmProcess> pList = this.vmm.processGetAll();
-        for (int i = 0; i < pList.size(); i++) {
-            if (pList.get(i).getName().equals("cs2.exe")) {
-                gameProcess = pList.get(i);
-                break;
-            }
-        }
-
+        gameProcess = processMonitor.waitForProcess();
         if (gameProcess == null) {
-            System.out.println("[-] Failed to find cs2.exe process");
             return false;
         }
 
         memoryTool = new MemoryTool(gameProcess);
-        clientAddress = memoryTool.getModuleAddress("client.dll");
-        mapNameAddress = memoryTool.getModuleAddress("matchmaking.dll");
-        mapNameAddress = memoryTool.readAddress(mapNameAddress + dwGameTypes + dwGameTypes_mapName, 8);
-        EntityList = memoryTool.readAddress(clientAddress + dwEntityList, 8);
-        EntityList = memoryTool.readAddress(EntityList + 0x10, 8);
+        return refreshGameData();
+    }
 
-        initPlayerInfo();
-        if (EntityList == 0) {
+    private boolean refreshGameData() {
+        try {
+            clientAddress = memoryTool.getModuleAddress("client.dll");
+            mapNameAddress = memoryTool.getModuleAddress("matchmaking.dll");
+            mapNameAddress = memoryTool.readAddress(mapNameAddress + dwGameTypes + dwGameTypes_mapName, 8);
+            EntityList = memoryTool.readAddress(clientAddress + dwEntityList, 8);
+            EntityList = memoryTool.readAddress(EntityList + 0x10, 8);
+
+            if (EntityList == 0) {
+                return false;
+            }
+            return true;
+        } catch (Exception e) {
             return false;
         }
-
-        return true;
     }
 
     public void initPlayerInfo() {
-        mapName = memoryTool.readString(mapNameAddress + 0x4, 32);
-
-        LocalPlayerController = memoryTool.readAddress(clientAddress + dwLocalPlayerPawn, 8);
-        if (LocalPlayerController == 0) {
-            return;
-        }
-
-        List<PlayerInfo> list = new ArrayList<>();
-        List<PlayerAddressUpdateThread> pautList = new ArrayList<>();
-        boolean isKnowMap = mapName != null && !"".equals(mapName) && knowMap.indexOf(mapName) != -1;
-
-        for (int i = 0; i < 64; i++) {
-            PlayerAddressUpdateThread updateThread = new PlayerAddressUpdateThread();
-            updateThread.setIndex(i);
-            updateThread.setMemoryTool(memoryTool);
-            updateThread.setClientAddress(clientAddress);
-            updateThread.setEntityList(EntityList);
-            updateThread.setDwEntityList(dwEntityList);
-            updateThread.setLocalPlayerController(LocalPlayerController);
-            updateThread.setKnowMap(isKnowMap);
-            updateThread.start();
-            pautList.add(updateThread);
-        }
-
-        pautList.forEach(pItem -> {
-            try {
-                pItem.join();
-                PlayerInfo data = pItem.getPlayerInfo();
-                if (data != null) {
-                    list.add(pItem.getPlayerInfo());
+        try {
+            if (!refreshGameData()) {
+                gameProcess = processMonitor.waitForProcess();
+                if (gameProcess != null) {
+                    memoryTool = new MemoryTool(gameProcess);
+                    refreshGameData();
                 }
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
             }
-        });
+            mapName = memoryTool.readString(mapNameAddress + 0x4, 32);
 
-        playerInfoList = list;
+            LocalPlayerController = memoryTool.readAddress(clientAddress + dwLocalPlayerPawn, 8);
+            if (LocalPlayerController == 0) {
+                return;
+            }
+
+            List<PlayerInfo> list = new ArrayList<>();
+            List<PlayerAddressUpdateThread> pautList = new ArrayList<>();
+            boolean isKnowMap = mapName != null && !"".equals(mapName) && knowMap.indexOf(mapName) != -1;
+
+            for (int i = 0; i < 64; i++) {
+                PlayerAddressUpdateThread updateThread = new PlayerAddressUpdateThread();
+                updateThread.setIndex(i);
+                updateThread.setMemoryTool(memoryTool);
+                updateThread.setClientAddress(clientAddress);
+                updateThread.setEntityList(EntityList);
+                updateThread.setDwEntityList(dwEntityList);
+                updateThread.setLocalPlayerController(LocalPlayerController);
+                updateThread.setKnowMap(isKnowMap);
+                updateThread.start();
+                pautList.add(updateThread);
+            }
+
+            pautList.forEach(pItem -> {
+                try {
+                    pItem.join();
+                    PlayerInfo data = pItem.getPlayerInfo();
+                    if (data != null) {
+                        list.add(pItem.getPlayerInfo());
+                    }
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+
+            playerInfoList = list;
+        } catch (Exception e) {
+            playerInfoList = new ArrayList<>();
+        }
     }
 
     public List<PlayerInfo> getPlayerInfoList() {

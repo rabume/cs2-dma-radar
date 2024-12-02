@@ -12,7 +12,8 @@
 After you complied or downloaded the latest release, you can start the radar with the following command:
 
 ```bash
-java -jar CS2DMA-1.3.3.jar
+# Replace x.x.x with the version you downloaded
+java -jar CS2DMA-X.X.X.jar
 ```
 
 When using this radar with an advanced anti-cheat (Faceit, Esea etc.) avoid runnnig the radar on the same network as the target machine.

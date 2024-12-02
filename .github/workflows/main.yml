@@ -92,15 +92,27 @@ jobs:
           git add release/offsets.json app/pom.xml
           git commit -m "chore: update offsets and bump version to v${version}"
 
-      - name: Push changes
+      - name: Create Pull Request
         if: steps.update.outputs.changed == 'true'
-        uses: ad-m/github-push-action@master
+        id: create-pr
+        uses: peter-evans/create-pull-request@v5
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: update offsets and bump version to v${{ env.version }}"
+          branch: update-offsets
+          delete-branch: true
+          title: "chore: update offsets and bump version to v${{ env.version }}"
+          body: "Automatic PR to update offsets"
+
+      - name: Enable Pull Request Automerge
+        if: steps.update.outputs.changed == 'true' && steps.create-pr.outputs.pull-request-number
+        run: |
+          gh pr merge --auto --merge "${{ steps.create-pr.outputs.pull-request-number }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Release
-        if: steps.update.outputs.changed == 'true'
+        if: steps.update.outputs.changed == 'true' && steps.create-pr.outputs.pull-request-operation == 'created'
         uses: softprops/action-gh-release@v1
         with:
           files: release.zip

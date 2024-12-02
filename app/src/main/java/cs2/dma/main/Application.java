@@ -15,20 +15,24 @@ public class Application {
         GameDataManager manager = new GameDataManager();
 
         if (manager.initializeVmm()) {
-            System.out.println("[+] Game data manager initialized!");
-
-            if (manager.initializeGameData()) {
-                System.out.println("[+] Game data initialized!");
-
-                GameDataController.setGameDataManager(manager);
-                SpringApplication.run(Application.class, args);
-            } else {
-                handleInitializationError(
-                        "[-] Failed to initialize game data.");
+            System.out.println("[+] VMM initialized successfully!");
+            
+            while (true) {
+                try {
+                    if (manager.initializeGameData()) {
+                        System.out.println("[+] Game data initialized successfully!");
+                        GameDataController.setGameDataManager(manager);
+                        break;
+                    }
+                } catch (Exception e) {
+                    System.out.println("[-] Error initializing game data: " + e.getMessage());
+                    Thread.sleep(1000);
+                }
             }
+            
+            SpringApplication.run(Application.class, args);
         } else {
-            handleInitializationError(
-                    "[-] Failed to initialize VMM.");
+            handleInitializationError("[-] Failed to initialize VMM.");
         }
     }
 

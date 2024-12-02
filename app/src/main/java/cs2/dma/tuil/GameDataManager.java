@@ -17,8 +17,6 @@ public class GameDataManager {
 
     static {
         try {
-            System.out.println("[+] Read offsets.json file");
-
             FileReader reader = new FileReader("offsets.json");
             char[] buf = new char[1024];
             int len = 0;
@@ -39,12 +37,7 @@ public class GameDataManager {
             dwEntityList += Long.parseLong(map.get("dwEntityList").replace("0x", ""), 16);
             dwGameTypes += Long.parseLong(map.get("dwGameTypes").replace("0x", ""), 16);
             dwGameTypes_mapName += Long.parseLong(map.get("dwGameTypes_mapName").replace("0x", ""), 16);
-
-            System.out.println("[+] dwLocalPlayerPawn: " + dwLocalPlayerPawn);
-            System.out.println("[+] dwEntityList: " + dwEntityList);
-            System.out.println("[+] dwGameTypes: " + dwGameTypes);
-            System.out.println("[+] dwGameTypes_mapName: " + dwGameTypes_mapName);
-
+       
             parser.close();
         } catch (Exception e) {
             System.out.println("[-] Failed to read offsets.json file: " + e.getMessage());
@@ -67,12 +60,18 @@ public class GameDataManager {
     private String mapName;
 
     private IVmm vmm;
+    private GameProcessMonitor processMonitor;
 
+    private static final long PROCESS_RETRY_DELAY = 5000;
 
     public boolean initializeVmm() {
         this.vmm = IVmm.initializeVmm(System.getProperty("user.dir") + "\\vmm", argvMemProcFS);
         vmm.setConfig(IVmm.VMMDLL_OPT_REFRESH_FREQ_FAST, 1);
-        return vmm.isValid();
+        if (vmm.isValid()) {
+            this.processMonitor = new GameProcessMonitor(vmm);
+            return true;
+        }
+        return false;
     }
 
     public IVmm getVmm() {
@@ -84,72 +83,98 @@ public class GameDataManager {
     }
 
     public boolean initializeGameData() {
-        List<IVmmProcess> pList = this.vmm.processGetAll();
-        for (int i = 0; i < pList.size(); i++) {
-            if (pList.get(i).getName().equals("cs2.exe")) {
-                gameProcess = pList.get(i);
-                break;
+        while (!Thread.currentThread().isInterrupted()) {
+            try {
+                gameProcess = processMonitor.waitForProcess();
+                if (gameProcess == null) {
+                    return false;
+                }
+
+                memoryTool = new MemoryTool(gameProcess);
+                if (refreshGameData()) {
+                    return true;
+                }
+                
+                Thread.sleep(PROCESS_RETRY_DELAY);
+            } catch (Exception e) {
+                System.out.println("[-] Error initializing game data: " + e.getMessage());
+                try {
+                    Thread.sleep(PROCESS_RETRY_DELAY);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    return false;
+                }
             }
         }
+        return false;
+    }
 
-        if (gameProcess == null) {
-            System.out.println("[-] Failed to find cs2.exe process");
+    private boolean refreshGameData() {
+        try {
+            clientAddress = memoryTool.getModuleAddress("client.dll");
+            mapNameAddress = memoryTool.getModuleAddress("matchmaking.dll");
+            mapNameAddress = memoryTool.readAddress(mapNameAddress + dwGameTypes + dwGameTypes_mapName, 8);
+            EntityList = memoryTool.readAddress(clientAddress + dwEntityList, 8);
+            EntityList = memoryTool.readAddress(EntityList + 0x10, 8);
+
+            if (EntityList == 0) {
+                return false;
+            }
+            return true;
+        } catch (Exception e) {
             return false;
         }
-
-        memoryTool = new MemoryTool(gameProcess);
-        clientAddress = memoryTool.getModuleAddress("client.dll");
-        mapNameAddress = memoryTool.getModuleAddress("matchmaking.dll");
-        mapNameAddress = memoryTool.readAddress(mapNameAddress + dwGameTypes + dwGameTypes_mapName, 8);
-        EntityList = memoryTool.readAddress(clientAddress + dwEntityList, 8);
-        EntityList = memoryTool.readAddress(EntityList + 0x10, 8);
-
-        initPlayerInfo();
-        if (EntityList == 0) {
-            return false;
-        }
-
-        return true;
     }
 
     public void initPlayerInfo() {
-        mapName = memoryTool.readString(mapNameAddress + 0x4, 32);
-
-        LocalPlayerController = memoryTool.readAddress(clientAddress + dwLocalPlayerPawn, 8);
-        if (LocalPlayerController == 0) {
-            return;
-        }
-
-        List<PlayerInfo> list = new ArrayList<>();
-        List<PlayerAddressUpdateThread> pautList = new ArrayList<>();
-        boolean isKnowMap = mapName != null && !"".equals(mapName) && knowMap.indexOf(mapName) != -1;
-
-        for (int i = 0; i < 64; i++) {
-            PlayerAddressUpdateThread updateThread = new PlayerAddressUpdateThread();
-            updateThread.setIndex(i);
-            updateThread.setMemoryTool(memoryTool);
-            updateThread.setClientAddress(clientAddress);
-            updateThread.setEntityList(EntityList);
-            updateThread.setDwEntityList(dwEntityList);
-            updateThread.setLocalPlayerController(LocalPlayerController);
-            updateThread.setKnowMap(isKnowMap);
-            updateThread.start();
-            pautList.add(updateThread);
-        }
-
-        pautList.forEach(pItem -> {
-            try {
-                pItem.join();
-                PlayerInfo data = pItem.getPlayerInfo();
-                if (data != null) {
-                    list.add(pItem.getPlayerInfo());
+        try {
+            if (!refreshGameData() || !processMonitor.isCurrentProcessValid()) {
+                if (!initializeGameData()) {
+                    playerInfoList = new ArrayList<>();
+                    return;
                 }
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
             }
-        });
+            mapName = memoryTool.readString(mapNameAddress + 0x4, 32);
 
-        playerInfoList = list;
+            LocalPlayerController = memoryTool.readAddress(clientAddress + dwLocalPlayerPawn, 8);
+            if (LocalPlayerController == 0) {
+                return;
+            }
+
+            List<PlayerInfo> list = new ArrayList<>();
+            List<PlayerAddressUpdateThread> pautList = new ArrayList<>();
+            boolean isKnowMap = mapName != null && !"".equals(mapName) && knowMap.indexOf(mapName) != -1;
+
+            for (int i = 0; i < 64; i++) {
+                PlayerAddressUpdateThread updateThread = new PlayerAddressUpdateThread();
+                updateThread.setIndex(i);
+                updateThread.setMemoryTool(memoryTool);
+                updateThread.setClientAddress(clientAddress);
+                updateThread.setEntityList(EntityList);
+                updateThread.setDwEntityList(dwEntityList);
+                updateThread.setLocalPlayerController(LocalPlayerController);
+                updateThread.setKnowMap(isKnowMap);
+                updateThread.start();
+                pautList.add(updateThread);
+            }
+
+            pautList.forEach(pItem -> {
+                try {
+                    pItem.join();
+                    PlayerInfo data = pItem.getPlayerInfo();
+                    if (data != null) {
+                        list.add(pItem.getPlayerInfo());
+                    }
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+
+            playerInfoList = list;
+        } catch (Exception e) {
+            System.out.println("[-] Error updating player info: " + e.getMessage());
+            playerInfoList = new ArrayList<>();
+        }
     }
 
     public List<PlayerInfo> getPlayerInfoList() {

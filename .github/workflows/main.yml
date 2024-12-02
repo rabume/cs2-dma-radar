@@ -67,8 +67,8 @@ jobs:
             echo "Error: pom.xml not found"
             exit 1
           fi
-          # Extract current version
-          CURRENT_VERSION=$(grep -m1 "<version>" app/pom.xml | sed 's/.*<version>\([^<]*\)<\/version>.*/\1/')
+          # Extract first version tag not in parent section
+          CURRENT_VERSION=$(sed -n '/<parent/,/<\/parent>/b;/<version>/s/.*<version>\([^<]*\)<\/version>.*/\1/p' app/pom.xml | head -n1)
           if [ -z "$CURRENT_VERSION" ]; then
             echo "Error: Could not extract version from pom.xml"
             exit 1
@@ -79,8 +79,8 @@ jobs:
           PATCH_VERSION=$(echo $CURRENT_VERSION | rev | cut -d. -f1 | rev)
           NEW_VERSION="${BASE_VERSION}.$(($PATCH_VERSION + 1))"
 
-          # Update pom.xml with new version
-          sed -i "s/<version>$CURRENT_VERSION<\/version>/<version>$NEW_VERSION<\/version>/" app/pom.xml
+          # Update pom.xml with new version (first non-parent version tag)
+          sed -i "0,/<version>$CURRENT_VERSION<\/version>/s//<version>$NEW_VERSION<\/version>/" app/pom.xml
           echo "version=$NEW_VERSION" >> $GITHUB_ENV
           echo "Updated version from $CURRENT_VERSION to $NEW_VERSION"
 

@@ -61,7 +61,7 @@ Alternatively, you can use a service like [ngrok](https://ngrok.com/) to share y
 2. Move back to the root directory: `cd ..`
 3. Build application: `make build`
 4. Move to the release directory: `cd release`
-5. Start the application: `java -jar CS2DMA-1.2.0.jar`
+5. Start the application: `java -jar CS2DMA-X.X.X.jar`
 
 ## Offsets
 

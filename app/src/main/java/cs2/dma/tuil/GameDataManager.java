@@ -17,8 +17,6 @@ public class GameDataManager {
 
     static {
         try {
-            System.out.println("[+] Read offsets.json file");
-
             FileReader reader = new FileReader("offsets.json");
             char[] buf = new char[1024];
             int len = 0;
@@ -39,12 +37,7 @@ public class GameDataManager {
             dwEntityList += Long.parseLong(map.get("dwEntityList").replace("0x", ""), 16);
             dwGameTypes += Long.parseLong(map.get("dwGameTypes").replace("0x", ""), 16);
             dwGameTypes_mapName += Long.parseLong(map.get("dwGameTypes_mapName").replace("0x", ""), 16);
-
-            System.out.println("[+] dwLocalPlayerPawn: " + dwLocalPlayerPawn);
-            System.out.println("[+] dwEntityList: " + dwEntityList);
-            System.out.println("[+] dwGameTypes: " + dwGameTypes);
-            System.out.println("[+] dwGameTypes_mapName: " + dwGameTypes_mapName);
-
+       
             parser.close();
         } catch (Exception e) {
             System.out.println("[-] Failed to read offsets.json file: " + e.getMessage());
@@ -69,10 +62,11 @@ public class GameDataManager {
     private IVmm vmm;
     private GameProcessMonitor processMonitor;
 
+    private static final long PROCESS_RETRY_DELAY = 5000;
 
     public boolean initializeVmm() {
         this.vmm = IVmm.initializeVmm(System.getProperty("user.dir") + "\\vmm", argvMemProcFS);
-        vmm.setConfig(IVmm.VMMDLL_OPT_REFRESH_FAST, 1);
+        vmm.setConfig(IVmm.VMMDLL_OPT_REFRESH_FREQ_FAST, 1);
         if (vmm.isValid()) {
             this.processMonitor = new GameProcessMonitor(vmm);
             return true;
@@ -89,13 +83,30 @@ public class GameDataManager {
     }
 
     public boolean initializeGameData() {
-        gameProcess = processMonitor.waitForProcess();
-        if (gameProcess == null) {
-            return false;
-        }
+        while (!Thread.currentThread().isInterrupted()) {
+            try {
+                gameProcess = processMonitor.waitForProcess();
+                if (gameProcess == null) {
+                    return false;
+                }
 
-        memoryTool = new MemoryTool(gameProcess);
-        return refreshGameData();
+                memoryTool = new MemoryTool(gameProcess);
+                if (refreshGameData()) {
+                    return true;
+                }
+                
+                Thread.sleep(PROCESS_RETRY_DELAY);
+            } catch (Exception e) {
+                System.out.println("[-] Error initializing game data: " + e.getMessage());
+                try {
+                    Thread.sleep(PROCESS_RETRY_DELAY);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    return false;
+                }
+            }
+        }
+        return false;
     }
 
     private boolean refreshGameData() {
@@ -117,11 +128,10 @@ public class GameDataManager {
 
     public void initPlayerInfo() {
         try {
-            if (!refreshGameData()) {
-                gameProcess = processMonitor.waitForProcess();
-                if (gameProcess != null) {
-                    memoryTool = new MemoryTool(gameProcess);
-                    refreshGameData();
+            if (!refreshGameData() || !processMonitor.isCurrentProcessValid()) {
+                if (!initializeGameData()) {
+                    playerInfoList = new ArrayList<>();
+                    return;
                 }
             }
             mapName = memoryTool.readString(mapNameAddress + 0x4, 32);
@@ -162,6 +172,7 @@ public class GameDataManager {
 
             playerInfoList = list;
         } catch (Exception e) {
+            System.out.println("[-] Error updating player info: " + e.getMessage());
             playerInfoList = new ArrayList<>();
         }
     }

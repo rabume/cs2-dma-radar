@@ -1,6 +1,8 @@
 # CS2 DMA Radar
+*Fork of [CS2_DMA_Radar](https://github.com/MoZiHao/CS2_DMA_Radar) with some improvements.*
 
-> Fork of [CS2_DMA_Radar](https://github.com/MoZiHao/CS2_DMA_Radar) with some improvements.
+> [!WARNING]
+> This project is for educational purposes only. I do not encourage cheating in any way.
 
 ![gif](https://github.com/rabume/cs2-dma-radar/assets/19410629/c2d6130c-7d67-49a1-8617-aeef07b148fc)
 
@@ -15,9 +17,6 @@ After you complied or downloaded the latest release, you can start the radar wit
 # Replace x.x.x with the version you downloaded
 java -jar CS2DMA-X.X.X.jar
 ```
-
-When using this radar with an advanced anti-cheat (Faceit, Esea etc.) avoid runnnig the radar on the same network as the target machine.
-
 You should be able to access the radar at http://localhost:8080 and your local IP address. If you want to share the radar with your friends, check the section [Share radar](#-share-radar).
 
 ## ⚡️ Requirements

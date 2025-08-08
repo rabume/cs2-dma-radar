@@ -10,7 +10,7 @@ def fetch_offsets():
             "dwLocalPlayerPawn": hex(offsets["client.dll"]["dwLocalPlayerPawn"]),
             "dwEntityList": hex(offsets["client.dll"]["dwEntityList"]),
             "dwGameTypes": hex(offsets["matchmaking.dll"]["dwGameTypes"]),
-            "dwGameTypes_mapName": hex(offsets["matchmaking.dll"]["dwGameTypes_mapName"]),
+            "dwGlobalVars": hex(offsets["client.dll"]["dwGlobalVars"]),
             "m_iHealth": hex(client["client.dll"]["classes"]["C_BaseEntity"]["fields"]["m_iHealth"]),
             "m_iPawnArmor": hex(client["client.dll"]["classes"]["CCSPlayerController"]["fields"]["m_iPawnArmor"]),
             "m_lifeState": hex(client["client.dll"]["classes"]["C_BaseEntity"]["fields"]["m_lifeState"]),

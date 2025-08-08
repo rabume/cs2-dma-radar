@@ -13,7 +13,7 @@ public class GameDataManager {
     private static long dwLocalPlayerPawn = 0x0;
     private static long dwEntityList = 0x0;
     private static long dwGameTypes = 0x0; 
-    private static long dwGameTypes_mapName = 0x0; 
+    private static long dwGlobalVars = 0x0; 
 
     static {
         try {
@@ -36,7 +36,7 @@ public class GameDataManager {
             dwLocalPlayerPawn += Long.parseLong(map.get("dwLocalPlayerPawn").replace("0x", ""), 16);
             dwEntityList += Long.parseLong(map.get("dwEntityList").replace("0x", ""), 16);
             dwGameTypes += Long.parseLong(map.get("dwGameTypes").replace("0x", ""), 16);
-            dwGameTypes_mapName += Long.parseLong(map.get("dwGameTypes_mapName").replace("0x", ""), 16);
+            dwGlobalVars += Long.parseLong(map.get("dwGlobalVars").replace("0x", ""), 16);
        
             parser.close();
         } catch (Exception e) {
@@ -111,9 +111,10 @@ public class GameDataManager {
 
     private boolean refreshGameData() {
         try {
+            long globalVarsPtr = memoryTool.readAddress(clientAddress + dwGlobalVars, 8);
+
             clientAddress = memoryTool.getModuleAddress("client.dll");
-            mapNameAddress = memoryTool.getModuleAddress("matchmaking.dll");
-            mapNameAddress = memoryTool.readAddress(mapNameAddress + dwGameTypes + dwGameTypes_mapName, 8);
+            mapNameAddress = globalVarsPtr + 0x188; 
             EntityList = memoryTool.readAddress(clientAddress + dwEntityList, 8);
             EntityList = memoryTool.readAddress(EntityList + 0x10, 8);
 
@@ -134,7 +135,8 @@ public class GameDataManager {
                     return;
                 }
             }
-            mapName = memoryTool.readString(mapNameAddress + 0x4, 32);
+            long namePtr = memoryTool.readAddress(mapNameAddress, 8);
+            mapName = namePtr != 0 ? memoryTool.readString(namePtr, 64) : "";
 
             LocalPlayerController = memoryTool.readAddress(clientAddress + dwLocalPlayerPawn, 8);
             if (LocalPlayerController == 0) {

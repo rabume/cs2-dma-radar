@@ -14,6 +14,7 @@ public class GameDataManager {
     private static long dwEntityList = 0x0;
     private static long dwGameTypes = 0x0; 
     private static long dwGlobalVars = 0x0; 
+    private static final long GLOBAL_VARS_MAPNAME_OFFSET = 0x230;
 
     static {
         try {
@@ -115,16 +116,13 @@ public class GameDataManager {
 
     private boolean refreshGameData() {
         try {
-            long globalVarsPtr = memoryTool.readAddress(clientAddress + dwGlobalVars, 8);
-
             clientAddress = memoryTool.getModuleAddress("client.dll");
-            mapNameAddress = globalVarsPtr + 0x188; 
+            long globalVarsPtr = memoryTool.readAddress(clientAddress + dwGlobalVars, 8);
+            if (globalVarsPtr == 0) return false;
+            mapNameAddress = globalVarsPtr; 
             EntityList = memoryTool.readAddress(clientAddress + dwEntityList, 8);
             EntityList = memoryTool.readAddress(EntityList + 0x10, 8);
-
-            if (EntityList == 0) {
-                return false;
-            }
+            if (EntityList == 0) return false;
             return true;
         } catch (Exception e) {
             return false;
@@ -139,8 +137,7 @@ public class GameDataManager {
                     return;
                 }
             }
-            long namePtr = memoryTool.readAddress(mapNameAddress, 8);
-            mapName = namePtr != 0 ? memoryTool.readString(namePtr, 64) : "";
+            mapName = readCurrentMapName();
 
             LocalPlayerController = memoryTool.readAddress(clientAddress + dwLocalPlayerPawn, 8);
             if (LocalPlayerController == 0) {
@@ -185,6 +182,32 @@ public class GameDataManager {
 
     public List<PlayerInfo> getPlayerInfoList() {
         return playerInfoList;
+    }
+
+    private String readCurrentMapName() {
+        String result = attemptReadMapName(mapNameAddress + GLOBAL_VARS_MAPNAME_OFFSET);
+        return isValidMapName(result) ? result : "undefined";
+    }
+
+    private String attemptReadMapName(long mapNamePtrAddress) {
+        try {
+            long namePtr = memoryTool.readAddress(mapNamePtrAddress, 8);
+            if (namePtr == 0) return "";
+            String raw = memoryTool.readString(namePtr, 64);
+            if (raw == null || raw.isEmpty()) return "";
+            if (raw.charAt(0) == '_') {
+                return "de" + raw; // _dust2 -> de_dust2
+            }
+            return raw; 
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    private boolean isValidMapName(String name) {
+        if (name == null || name.isEmpty() || "undefined".equals(name)) return false;
+        // known maps list or starts with de_ / ar_ / cs_
+        return knowMap.contains(name) || name.startsWith("de_") || name.startsWith("ar_") || name.startsWith("cs_");
     }
 
 }

@@ -65,7 +65,11 @@ public class GameDataManager {
     private static final long PROCESS_RETRY_DELAY = 5000;
 
     public boolean initializeVmm() {
-        this.vmm = IVmm.initializeVmm(System.getProperty("user.dir") + "\\vmm", argvMemProcFS);
+    String os = System.getProperty("os.name", "").toLowerCase();
+    boolean isWindows = os.contains("win");
+    String baseDir = System.getProperty("user.dir");
+    String vmmPath = baseDir + (isWindows ? "\\\\vmm" : "/vmm");
+    this.vmm = IVmm.initializeVmm(vmmPath, argvMemProcFS);
         vmm.setConfig(IVmm.VMMDLL_OPT_REFRESH_FREQ_FAST, 1);
         if (vmm.isValid()) {
             this.processMonitor = new GameProcessMonitor(vmm);

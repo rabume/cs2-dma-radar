@@ -1,5 +1,6 @@
 # CS2 DMA Radar
-*Fork of [CS2_DMA_Radar](https://github.com/MoZiHao/CS2_DMA_Radar) with some improvements.*
+
+_Fork of [CS2_DMA_Radar](https://github.com/MoZiHao/CS2_DMA_Radar) with some improvements._
 
 > [!WARNING]
 > This project is for educational purposes only. I do not encourage cheating in any way.
@@ -17,6 +18,7 @@ After you complied or downloaded the latest release, you can start the radar wit
 # Replace x.x.x with the version you downloaded
 java -jar CS2DMA-X.X.X.jar
 ```
+
 You should be able to access the radar at http://localhost:8080 and your local IP address. If you want to share the radar with your friends, check the section [Share radar](#-share-radar).
 
 ## ⚡️ Requirements
@@ -34,18 +36,8 @@ You should be able to access the radar at http://localhost:8080 and your local I
 
 #### 🚨 Note
 
-1. If you have issues installing make on Windows you can follow this [guide](https://gist.github.com/evanwill/0207876c3243bbb6863e65ec5dc3f058#make)
-
-2. Only tested on Windows. The release provides the necessary Dynamic Link Libraries (DLLs). To run on Linux, you need to obtain
-   the Shared Object (.so) files yourself and replace the ones in the release directory. Also the paths have to be adjusted.
-
-**Client still has to run Windows!**
-
-The required files are:
-
-- [leechcore.so](https://github.com/ufrisk/LeechCore/releases)
-- [vmm.so](https://github.com/ufrisk/MemProcFS/releases)
-- [FTD3XX.so](https://ftdichip.com/drivers/d3xx-drivers/)
+- If you have issues installing make on Windows you can follow this [guide](https://gist.github.com/evanwill/0207876c3243bbb6863e65ec5dc3f058#make)
+- Attacker PC can either be running Windows OR Linux. Victim PC is expected to run Windows.
 
 ## 📡 Share radar
 

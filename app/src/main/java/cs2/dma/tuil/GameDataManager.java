@@ -67,9 +67,10 @@ public class GameDataManager {
 
     public boolean initializeVmm() {
     String os = System.getProperty("os.name", "").toLowerCase();
-    boolean isWindows = os.contains("win");
+    System.out.println("[*] Detected OS: " + os);
+    boolean isLinux = os.contains("linux");
     String baseDir = System.getProperty("user.dir");
-    String vmmPath = baseDir + (isWindows ? "\\\\vmm" : "/vmm");
+    String vmmPath = baseDir + (isLinux ? "/vmm" : "\\vmm");
     this.vmm = IVmm.initializeVmm(vmmPath, argvMemProcFS);
         vmm.setConfig(IVmm.VMMDLL_OPT_REFRESH_FREQ_FAST, 1);
         if (vmm.isValid()) {

@@ -13,7 +13,8 @@ public class GameDataManager {
     private static long dwLocalPlayerPawn = 0x0;
     private static long dwEntityList = 0x0;
     private static long dwGameTypes = 0x0; 
-    private static long dwGameTypes_mapName = 0x0; 
+    private static long dwGlobalVars = 0x0; 
+    private static final long GLOBAL_VARS_MAPNAME_OFFSET = 0x230;
 
     static {
         try {
@@ -36,7 +37,7 @@ public class GameDataManager {
             dwLocalPlayerPawn += Long.parseLong(map.get("dwLocalPlayerPawn").replace("0x", ""), 16);
             dwEntityList += Long.parseLong(map.get("dwEntityList").replace("0x", ""), 16);
             dwGameTypes += Long.parseLong(map.get("dwGameTypes").replace("0x", ""), 16);
-            dwGameTypes_mapName += Long.parseLong(map.get("dwGameTypes_mapName").replace("0x", ""), 16);
+            dwGlobalVars += Long.parseLong(map.get("dwGlobalVars").replace("0x", ""), 16);
        
             parser.close();
         } catch (Exception e) {
@@ -65,7 +66,11 @@ public class GameDataManager {
     private static final long PROCESS_RETRY_DELAY = 5000;
 
     public boolean initializeVmm() {
-        this.vmm = IVmm.initializeVmm(System.getProperty("user.dir") + "\\vmm", argvMemProcFS);
+    String os = System.getProperty("os.name", "").toLowerCase();
+    boolean isWindows = os.contains("win");
+    String baseDir = System.getProperty("user.dir");
+    String vmmPath = baseDir + (isWindows ? "\\\\vmm" : "/vmm");
+    this.vmm = IVmm.initializeVmm(vmmPath, argvMemProcFS);
         vmm.setConfig(IVmm.VMMDLL_OPT_REFRESH_FREQ_FAST, 1);
         if (vmm.isValid()) {
             this.processMonitor = new GameProcessMonitor(vmm);
@@ -112,14 +117,12 @@ public class GameDataManager {
     private boolean refreshGameData() {
         try {
             clientAddress = memoryTool.getModuleAddress("client.dll");
-            mapNameAddress = memoryTool.getModuleAddress("matchmaking.dll");
-            mapNameAddress = memoryTool.readAddress(mapNameAddress + dwGameTypes + dwGameTypes_mapName, 8);
+            long globalVarsPtr = memoryTool.readAddress(clientAddress + dwGlobalVars, 8);
+            if (globalVarsPtr == 0) return false;
+            mapNameAddress = globalVarsPtr; 
             EntityList = memoryTool.readAddress(clientAddress + dwEntityList, 8);
             EntityList = memoryTool.readAddress(EntityList + 0x10, 8);
-
-            if (EntityList == 0) {
-                return false;
-            }
+            if (EntityList == 0) return false;
             return true;
         } catch (Exception e) {
             return false;
@@ -134,7 +137,7 @@ public class GameDataManager {
                     return;
                 }
             }
-            mapName = memoryTool.readString(mapNameAddress + 0x4, 32);
+            mapName = readCurrentMapName();
 
             LocalPlayerController = memoryTool.readAddress(clientAddress + dwLocalPlayerPawn, 8);
             if (LocalPlayerController == 0) {
@@ -179,6 +182,32 @@ public class GameDataManager {
 
     public List<PlayerInfo> getPlayerInfoList() {
         return playerInfoList;
+    }
+
+    private String readCurrentMapName() {
+        String result = attemptReadMapName(mapNameAddress + GLOBAL_VARS_MAPNAME_OFFSET);
+        return isValidMapName(result) ? result : "undefined";
+    }
+
+    private String attemptReadMapName(long mapNamePtrAddress) {
+        try {
+            long namePtr = memoryTool.readAddress(mapNamePtrAddress, 8);
+            if (namePtr == 0) return "";
+            String raw = memoryTool.readString(namePtr, 64);
+            if (raw == null || raw.isEmpty()) return "";
+            if (raw.charAt(0) == '_') {
+                return "de" + raw; // _dust2 -> de_dust2
+            }
+            return raw; 
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    private boolean isValidMapName(String name) {
+        if (name == null || name.isEmpty() || "undefined".equals(name)) return false;
+        // known maps list or starts with de_ / ar_ / cs_
+        return knowMap.contains(name) || name.startsWith("de_") || name.startsWith("ar_") || name.startsWith("cs_");
     }
 
 }

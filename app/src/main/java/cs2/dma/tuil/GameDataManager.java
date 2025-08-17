@@ -71,6 +71,13 @@ public class GameDataManager {
     boolean isLinux = os.contains("linux");
     String baseDir = System.getProperty("user.dir");
     String vmmPath = baseDir + (isLinux ? "/vmm" : "\\vmm");
+
+    String memmapPath = baseDir + (isLinux ? "/memmap.txt" : "\\memmap.txt");
+    if (new java.io.File(memmapPath).exists()) {
+        System.out.println("[*] Using existing memmap.txt at: " + memmapPath);
+        argvMemProcFS = new String[] { "", "-device", "FPGA", "-memmap", "memmap.txt" };
+    }
+
     this.vmm = IVmm.initializeVmm(vmmPath, argvMemProcFS);
         vmm.setConfig(IVmm.VMMDLL_OPT_REFRESH_FREQ_FAST, 1);
         if (vmm.isValid()) {

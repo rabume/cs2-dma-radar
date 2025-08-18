@@ -54,8 +54,16 @@ Alternatively, you can use a service like [ngrok](https://ngrok.com/) to share y
 4. Move to the release directory: `cd release`
 5. Start the application: `java -jar CS2DMA-X.X.X.jar`
 
-## Offsets
+## 🗺️ Memmap
+
+For AMD CPU's you need to provide a "memory map" for your victim machine.
+To extract this memory map you can use the tool [rammap](https://learn.microsoft.com/en-us/sysinternals/downloads/rammap) from Microsoft. Follow this [guide](https://github.com/ufrisk/LeechCore/wiki/Device_FPGA_AMD_Thunderbolt#known-memory-map--access-to-the-system).
+Create an `memmap.txt` in the same folder as the `offsets.json` and enter the values you received.
+
+## 🎯 Offsets
 
 The offsets are stored in a file called `offsets.json` in the root directory of the application.
 To get the latest offsets you can use the [cs2-dumper](https://github.com/a2x/cs2-dumper) by a2x.
 If you don't want to dump them yourself, you can use the offsets from [offsets.rs](https://github.com/a2x/cs2-dumper/blob/main/output/offsets.rs) and [client.dll.hpp](https://github.com/a2x/cs2-dumper/blob/main/output/client.dll.hpp).
+
+You can also use the github action offset update script to automaticly update the offstes.

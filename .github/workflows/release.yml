@@ -1,0 +1,98 @@
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "20"
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: "temurin"
+          java-version: "21"
+          cache: "maven"
+
+      - name: Build Client
+        run: |
+          cd client
+          npm ci
+          npm run build
+          cd ..
+
+      - name: Update Version
+        id: version
+        run: |
+          if [ ! -f "app/pom.xml" ]; then
+            echo "Error: pom.xml not found"
+            exit 1
+          fi
+          # Extract first version tag not in parent section
+          CURRENT_VERSION=$(sed -n '/<parent/,/<\/parent>/b;/<version>/s/.*<version>\([^<]*\)<\/version>.*/\1/p' app/pom.xml | head -n1)
+          if [ -z "$CURRENT_VERSION" ]; then
+            echo "Error: Could not extract version from pom.xml"
+            exit 1
+          fi
+
+          # Increment patch version
+          BASE_VERSION=$(echo $CURRENT_VERSION | rev | cut -d. -f2- | rev)
+          PATCH_VERSION=$(echo $CURRENT_VERSION | rev | cut -d. -f1 | rev)
+          NEW_VERSION="${BASE_VERSION}.$(($PATCH_VERSION + 1))"
+
+          # Update pom.xml with new version (first non-parent version tag)
+          sed -i "0,/<version>$CURRENT_VERSION<\/version>/s//<version>$NEW_VERSION<\/version>/" app/pom.xml
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          echo "Updated version from $CURRENT_VERSION to $NEW_VERSION"
+
+      - name: Build Java App
+        run: cd app && mvn package
+
+      - name: Prepare Release Files
+        run: |
+          cp app/target/*.jar release/
+          cd release && zip -r ../release.zip ./*
+
+      - name: Commit version bump
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add app/pom.xml
+          git commit -m "chore: bump version to v${{ steps.version.outputs.version }}" || echo "No changes to commit"
+          git push origin main || echo "No changes to push"
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: release.zip
+          tag_name: v${{ steps.version.outputs.version }}
+          name: Release v${{ steps.version.outputs.version }}
+          body: |
+            ## Changes
+
+            Automatic release created from main branch.
+
+            **Previous version:** v${{ steps.version.outputs.current_version }}
+            **New version:** v${{ steps.version.outputs.version }}
+
+            ## Installation
+
+            Download `release.zip` and extract it to use the CS2 DMA Radar.
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

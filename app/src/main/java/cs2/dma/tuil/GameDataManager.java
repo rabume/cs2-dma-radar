@@ -71,6 +71,13 @@ public class GameDataManager {
     boolean isLinux = os.contains("linux");
     String baseDir = System.getProperty("user.dir");
     String vmmPath = baseDir + (isLinux ? "/vmm" : "\\vmm");
+
+    String memmapPath = baseDir + (isLinux ? "/memmap.txt" : "\\memmap.txt");
+    if (new java.io.File(memmapPath).exists()) {
+        System.out.println("[*] Using existing memmap.txt at: " + memmapPath);
+        argvMemProcFS = new String[] { "", "-device", "FPGA", "-memmap", "memmap.txt" };
+    }
+
     this.vmm = IVmm.initializeVmm(vmmPath, argvMemProcFS);
         vmm.setConfig(IVmm.VMMDLL_OPT_REFRESH_FREQ_FAST, 1);
         if (vmm.isValid()) {
@@ -193,12 +200,15 @@ public class GameDataManager {
     private String attemptReadMapName(long mapNamePtrAddress) {
         try {
             long namePtr = memoryTool.readAddress(mapNamePtrAddress, 8);
-            if (namePtr == 0) return "";
-            String raw = memoryTool.readString(namePtr, 64);
-            if (raw == null || raw.isEmpty()) return "";
-            if (raw.charAt(0) == '_') {
-                return "de" + raw; // _dust2 -> de_dust2
+            if (namePtr == 0) {
+                return "";
+            } 
+
+            String raw = memoryTool.readString(namePtr - 2, 64);
+            if (raw == null || raw.isEmpty()) {
+                return "";
             }
+
             return raw; 
         } catch (Exception e) {
             return "";
@@ -206,9 +216,11 @@ public class GameDataManager {
     }
 
     private boolean isValidMapName(String name) {
-        if (name == null || name.isEmpty() || "undefined".equals(name)) return false;
-        // known maps list or starts with de_ / ar_ / cs_
-        return knowMap.contains(name) || name.startsWith("de_") || name.startsWith("ar_") || name.startsWith("cs_");
+        if (name == null || name.isEmpty() || "undefined".equals(name)) {
+            return false;
+        }
+
+        return knowMap.contains(name);
     }
 
 }

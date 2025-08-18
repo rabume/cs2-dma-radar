@@ -2,6 +2,9 @@ name: Update Offsets
 
 on:
   workflow_dispatch:
+  schedule:
+    # Run daily at 12:00 UTC to check for offset updates
+    - cron: "0 12 * * *"
 
 jobs:
   update-offsets:

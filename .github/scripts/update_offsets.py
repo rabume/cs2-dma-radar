@@ -14,7 +14,7 @@ def fetch_offsets():
             "m_iHealth": hex(client["client.dll"]["classes"]["C_BaseEntity"]["fields"]["m_iHealth"]),
             "m_iPawnArmor": hex(client["client.dll"]["classes"]["CCSPlayerController"]["fields"]["m_iPawnArmor"]),
             "m_lifeState": hex(client["client.dll"]["classes"]["C_BaseEntity"]["fields"]["m_lifeState"]),
-            "m_angEyeAngles": hex(client["client.dll"]["classes"]["C_CSPlayerPawnBase"]["fields"]["m_angEyeAngles"]),
+            "m_angEyeAngles": hex(client["client.dll"]["classes"]["C_CSPlayerPawn"]["fields"]["m_angEyeAngles"]),
             "m_iTeamNum": hex(client["client.dll"]["classes"]["C_BaseEntity"]["fields"]["m_iTeamNum"]),
             "m_hPlayerPawn": hex(client["client.dll"]["classes"]["CCSPlayerController"]["fields"]["m_hPlayerPawn"]),
             "m_vOldOrigin": hex(client["client.dll"]["classes"]["C_BasePlayerPawn"]["fields"]["m_vOldOrigin"]),

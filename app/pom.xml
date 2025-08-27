@@ -10,7 +10,7 @@
     </parent>
     <groupId>cs2</groupId>
     <artifactId>CS2DMA</artifactId>
-    <version>1.5.2</version>
+    <version>1.5.3</version>
     <name>CS2DMA</name>
     <description>CS2DMA</description>
 

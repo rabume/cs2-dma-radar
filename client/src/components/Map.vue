@@ -1,6 +1,6 @@
 <template>
     <div class="control">
-        <button @click="rotateMap">Rotate Map</button>
+        <button class="rotate-button" @click="rotateMap">Rotate Map</button>
         <br /><br />
         <div>Tick: {{ gameInfo.tick }}</div>
         <div>Average tick: {{ parseInt(allTickVal / tickTimes) }}</div>
@@ -10,6 +10,30 @@
         </div>
 
         <div @click="showEnemiesChanges">Show Enemies<input type="checkbox" v-model="showEnemies" /></div>
+
+        <hr />
+
+        <div class="bounds-controls">
+            <h4>Map Bounds Adjustment</h4>
+            <div class="bound-control">
+                <label>Min X: {{ currentBounds[0][0] }}</label>
+                <input type="range" v-model.number="currentBounds[0][0]" :min="-1000" :max="1000" step="1" @input="updateMapBounds" />
+            </div>
+            <div class="bound-control">
+                <label>Min Y: {{ currentBounds[0][1] }}</label>
+                <input type="range" v-model.number="currentBounds[0][1]" :min="-1000" :max="1000" step="1" @input="updateMapBounds" />
+            </div>
+            <div class="bound-control">
+                <label>Max X: {{ currentBounds[1][0] }}</label>
+                <input type="range" v-model.number="currentBounds[1][0]" :min="-1000" :max="1000" step="1" @input="updateMapBounds" />
+            </div>
+            <div class="bound-control">
+                <label>Max Y: {{ currentBounds[1][1] }}</label>
+                <input type="range" v-model.number="currentBounds[1][1]" :min="-1000" :max="1000" step="1" @input="updateMapBounds" />
+            </div>
+            <button @click="resetBounds" class="reset-btn">Reset to Default</button>
+            <button @click="saveBounds" class="save-btn">Save Current Bounds</button>
+        </div>
     </div>
     <div id="map-container">
         <div id="map" :style="{ transform: `rotate(${rotationAngle}deg)` }"></div>
@@ -107,8 +131,8 @@ const mapRadar = {
     de_train: {
         map: de_train_radar,
         bounds: [
-            [-560, -482],
-            [-45, 50]
+            [-237, -244],
+            [233, 206]
         ]
     }
 }
@@ -128,6 +152,14 @@ export default {
             map: null,
             imageOverLay: null,
             bounds: [
+                [-330, -315],
+                [155, 185]
+            ],
+            currentBounds: [
+                [-330, -315],
+                [155, 185]
+            ],
+            defaultBounds: [
                 [-330, -315],
                 [155, 185]
             ],
@@ -200,7 +232,17 @@ export default {
                     this.tickTimes = 0
                     this.map.removeLayer(this.imageOverLay)
                 }
-                this.imageOverLay = L.imageOverlay(mapRadar[this.gameInfo.mapName].map, mapRadar[this.gameInfo.mapName].bounds, {
+
+                // Initialize current bounds for the new map
+                // First try to load from localStorage, then use default map bounds
+                const savedBounds = localStorage.getItem(`bounds_${this.gameInfo.mapName}`)
+                if (savedBounds) {
+                    this.currentBounds = JSON.parse(savedBounds)
+                } else {
+                    this.currentBounds = JSON.parse(JSON.stringify(mapRadar[this.gameInfo.mapName].bounds))
+                }
+
+                this.imageOverLay = L.imageOverlay(mapRadar[this.gameInfo.mapName].map, this.currentBounds, {
                     interactive: true,
                     opacity: 1
                 }).addTo(this.map)
@@ -214,6 +256,8 @@ export default {
                 this.map.removeLayer(this.imageOverLay)
                 this.imageOverLay = null
             }
+            // Initialize currentBounds for unknown maps
+            this.currentBounds = JSON.parse(JSON.stringify(this.defaultBounds))
         },
         updatePlayerMarker(data, knowMap) {
             let mlist = []
@@ -275,16 +319,16 @@ export default {
                     if (mapRadar[this.gameInfo.mapName].needChangeMap) {
                         if (item.z > mapRadar[this.gameInfo.mapName].lowerValue) {
                             this.map.removeLayer(this.imageOverLay)
-                            this.imageOverLay = L.imageOverlay(mapRadar[this.gameInfo.mapName].map, mapRadar[this.gameInfo.mapName].bounds, {
+                            this.imageOverLay = L.imageOverlay(mapRadar[this.gameInfo.mapName].map, this.currentBounds, {
                                 interactive: true,
                                 opacity: 1
                             }).addTo(this.map)
                         } else {
                             this.map.removeLayer(this.imageOverLay)
-                            this.imageOverLay = L.imageOverlay(
-                                mapRadar[this.gameInfo.mapName].mapLower,
-                                mapRadar[this.gameInfo.mapName].bounds
-                            ).addTo(this.map)
+                            this.imageOverLay = L.imageOverlay(mapRadar[this.gameInfo.mapName].mapLower, this.currentBounds, {
+                                interactive: true,
+                                opacity: 1
+                            }).addTo(this.map)
                         }
                     }
                 }
@@ -301,8 +345,8 @@ export default {
             if (this.imageOverLay != null) {
                 this.map.removeLayer(this.imageOverLay)
             }
-            this.bounds[1] = [this.bounds[0][0] + this.XSize, this.bounds[0][1] + this.YSize]
-            this.imageOverLay = L.imageOverlay(mapRadar[this.gameInfo.mapName].map, this.bounds).addTo(this.map)
+            this.currentBounds[1] = [this.currentBounds[0][0] + this.XSize, this.currentBounds[0][1] + this.YSize]
+            this.imageOverLay = L.imageOverlay(mapRadar[this.gameInfo.mapName].map, this.currentBounds).addTo(this.map)
         },
         KeyDown(e) {
             switch (e.keyCode) {
@@ -328,19 +372,19 @@ export default {
                     this.reloadMap()
                     break
                 case 37:
-                    this.bounds[0][1] += 1
+                    this.currentBounds[0][1] += 1
                     this.reloadMap()
                     break
                 case 38:
-                    this.bounds[0][0] -= 1
+                    this.currentBounds[0][0] -= 1
                     this.reloadMap()
                     break
                 case 39:
-                    this.bounds[0][1] -= 1
+                    this.currentBounds[0][1] -= 1
                     this.reloadMap()
                     break
                 case 40:
-                    this.bounds[0][0] += 1
+                    this.currentBounds[0][0] += 1
                     this.reloadMap()
                     break
             }
@@ -365,6 +409,37 @@ export default {
             const mapContainer = document.getElementById('map')
             mapContainer.style.transform = `rotate(${this.rotationAngle}deg)`
             this.updatePlayerMarker(this.gameInfo.playerList, !!mapRadar[this.gameInfo.mapName])
+        },
+        updateMapBounds() {
+            if (this.imageOverLay && this.gameInfo.mapName) {
+                this.map.removeLayer(this.imageOverLay)
+                this.imageOverLay = L.imageOverlay(mapRadar[this.gameInfo.mapName].map, this.currentBounds, {
+                    interactive: true,
+                    opacity: 1
+                }).addTo(this.map)
+                this.map.setView(this.imageOverLay.getBounds().getCenter())
+            }
+        },
+        resetBounds() {
+            if (this.gameInfo.mapName && mapRadar[this.gameInfo.mapName]) {
+                // Reset to original map bounds
+                this.currentBounds = JSON.parse(JSON.stringify(mapRadar[this.gameInfo.mapName].bounds))
+                this.updateMapBounds()
+            } else {
+                // Reset to default bounds if no known map
+                this.currentBounds = JSON.parse(JSON.stringify(this.defaultBounds))
+                this.updateMapBounds()
+            }
+        },
+        saveBounds() {
+            if (this.gameInfo.mapName && mapRadar[this.gameInfo.mapName]) {
+                // Update the map bounds in memory
+                mapRadar[this.gameInfo.mapName].bounds = JSON.parse(JSON.stringify(this.currentBounds))
+                console.log(`Saved bounds for ${this.gameInfo.mapName}:`, this.currentBounds)
+
+                // You could also save to localStorage or send to backend here
+                localStorage.setItem(`bounds_${this.gameInfo.mapName}`, JSON.stringify(this.currentBounds))
+            }
         }
     }
 }
@@ -398,6 +473,19 @@ export default {
     background-color: aliceblue;
     border-radius: 10px;
     padding: 5px 10px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.rotate-button {
+    background-color: #ffffff;
+    color: rgb(0, 0, 0);
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 12px;
+    cursor: pointer;
+    margin-bottom: 10px;
 }
 
 .health-text {
@@ -406,5 +494,61 @@ export default {
 
 .control div {
     margin-bottom: 5px;
+}
+
+.bounds-controls {
+    margin-top: 10px;
+}
+
+.bounds-controls h4 {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    color: #333;
+}
+
+.bound-control {
+    margin-bottom: 8px;
+}
+
+.bound-control label {
+    display: block;
+    font-size: 12px;
+    color: #555;
+    margin-bottom: 2px;
+}
+
+.bound-control input[type='range'] {
+    width: 100%;
+    margin-bottom: 5px;
+}
+
+.reset-btn,
+.save-btn {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 12px;
+    cursor: pointer;
+    margin-right: 5px;
+    margin-top: 5px;
+}
+
+.reset-btn:hover,
+.save-btn:hover {
+    background-color: #0056b3;
+}
+
+.save-btn {
+    background-color: #28a745;
+}
+
+.save-btn:hover {
+    background-color: #1e7e34;
+}
+
+hr {
+    margin: 10px 0;
 }
 </style>

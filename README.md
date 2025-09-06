@@ -19,7 +19,7 @@ After you complied or downloaded the latest release, you can start the radar wit
 java -jar CS2DMA-X.X.X.jar
 ```
 
-You should be able to access the radar at http://localhost:8080 and your local IP address. If you want to share the radar with your friends, check the section [Share radar](#-share-radar).
+You should be able to access the radar at http://localhost:8080 and your local IP address. If you want to share the radar, check the section [Share radar](#-share-radar).
 
 ## ⚡️ Requirements
 
@@ -41,7 +41,7 @@ You should be able to access the radar at http://localhost:8080 and your local I
 
 ## 📡 Share radar
 
-To share the radar with your friends, you have to forward the port 8080 on your router to your local machine.
+To share the radar, you have to forward the port 8080 on your router to your local machine.
 Then you can share your public IP address with your friends.
 
 Alternatively, you can use a service like [ngrok](https://ngrok.com/) to share your radar.

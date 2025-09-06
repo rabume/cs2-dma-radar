@@ -12,8 +12,8 @@ import com.alibaba.fastjson.parser.DefaultJSONParser;
 public class GameDataManager {
     private static long dwLocalPlayerPawn = 0x0;
     private static long dwEntityList = 0x0;
-    private static long dwGameTypes = 0x0; 
-    private static long dwGlobalVars = 0x0; 
+    private static long dwGameTypes = 0x0;
+    private static long dwGlobalVars = 0x0;
     private static final long GLOBAL_VARS_MAPNAME_OFFSET = 0x230;
 
     static {
@@ -38,7 +38,7 @@ public class GameDataManager {
             dwEntityList += Long.parseLong(map.get("dwEntityList").replace("0x", ""), 16);
             dwGameTypes += Long.parseLong(map.get("dwGameTypes").replace("0x", ""), 16);
             dwGlobalVars += Long.parseLong(map.get("dwGlobalVars").replace("0x", ""), 16);
-       
+
             parser.close();
         } catch (Exception e) {
             System.out.println("[-] Failed to read offsets.json file: " + e.getMessage());
@@ -46,7 +46,7 @@ public class GameDataManager {
         }
     }
 
-    private String knowMap = "de_ancient,de_dust2,de_inferno,de_mirage,de_nuke,de_overpass,de_vertigo,de_anubis,cs_office,ar_baggage,ar_shoots,de_thera,de_mills";
+    private String knowMap = "de_ancient,de_dust2,de_inferno,de_mirage,de_nuke,de_overpass,de_train,de_vertigo";
     private static String[] argvMemProcFS = { "", "-device", "FPGA" };
 
     private static IVmmProcess gameProcess;
@@ -66,19 +66,19 @@ public class GameDataManager {
     private static final long PROCESS_RETRY_DELAY = 5000;
 
     public boolean initializeVmm() {
-    String os = System.getProperty("os.name", "").toLowerCase();
-    System.out.println("[*] Detected OS: " + os);
-    boolean isLinux = os.contains("linux");
-    String baseDir = System.getProperty("user.dir");
-    String vmmPath = baseDir + (isLinux ? "/vmm" : "\\vmm");
+        String os = System.getProperty("os.name", "").toLowerCase();
+        System.out.println("[*] Detected OS: " + os);
+        boolean isLinux = os.contains("linux");
+        String baseDir = System.getProperty("user.dir");
+        String vmmPath = baseDir + (isLinux ? "/vmm" : "\\vmm");
 
-    String memmapPath = baseDir + (isLinux ? "/memmap.txt" : "\\memmap.txt");
-    if (new java.io.File(memmapPath).exists()) {
-        System.out.println("[*] Using existing memmap.txt at: " + memmapPath);
-        argvMemProcFS = new String[] { "", "-device", "FPGA", "-memmap", "memmap.txt" };
-    }
+        String memmapPath = baseDir + (isLinux ? "/memmap.txt" : "\\memmap.txt");
+        if (new java.io.File(memmapPath).exists()) {
+            System.out.println("[*] Using existing memmap.txt at: " + memmapPath);
+            argvMemProcFS = new String[] { "", "-device", "FPGA", "-memmap", "memmap.txt" };
+        }
 
-    this.vmm = IVmm.initializeVmm(vmmPath, argvMemProcFS);
+        this.vmm = IVmm.initializeVmm(vmmPath, argvMemProcFS);
         vmm.setConfig(IVmm.VMMDLL_OPT_REFRESH_FREQ_FAST, 1);
         if (vmm.isValid()) {
             this.processMonitor = new GameProcessMonitor(vmm);
@@ -107,7 +107,7 @@ public class GameDataManager {
                 if (refreshGameData()) {
                     return true;
                 }
-                
+
                 Thread.sleep(PROCESS_RETRY_DELAY);
             } catch (Exception e) {
                 System.out.println("[-] Error initializing game data: " + e.getMessage());
@@ -126,11 +126,13 @@ public class GameDataManager {
         try {
             clientAddress = memoryTool.getModuleAddress("client.dll");
             long globalVarsPtr = memoryTool.readAddress(clientAddress + dwGlobalVars, 8);
-            if (globalVarsPtr == 0) return false;
-            mapNameAddress = globalVarsPtr; 
+            if (globalVarsPtr == 0)
+                return false;
+            mapNameAddress = globalVarsPtr;
             EntityList = memoryTool.readAddress(clientAddress + dwEntityList, 8);
             EntityList = memoryTool.readAddress(EntityList + 0x10, 8);
-            if (EntityList == 0) return false;
+            if (EntityList == 0)
+                return false;
             return true;
         } catch (Exception e) {
             return false;
@@ -202,14 +204,14 @@ public class GameDataManager {
             long namePtr = memoryTool.readAddress(mapNamePtrAddress, 8);
             if (namePtr == 0) {
                 return "";
-            } 
+            }
 
             String raw = memoryTool.readString(namePtr - 2, 64);
             if (raw == null || raw.isEmpty()) {
                 return "";
             }
 
-            return raw; 
+            return raw;
         } catch (Exception e) {
             return "";
         }

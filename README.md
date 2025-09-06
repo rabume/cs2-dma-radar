@@ -34,9 +34,13 @@ You should be able to access the radar at http://localhost:8080 and your local I
 - Apache Maven (>= 3.8.7) -> [Download](https://maven.apache.org/download.cgi)
 - Make (>= GNU Make 4.4.1) -> Use cygwin or install make directly: [Download](https://www.cygwin.com/)
 
+**Windows users:**
+
+- Download `FTD3XX.dll` from [FTDI D3XX drivers](https://ftdichip.com/drivers/d3xx-drivers/) and place it in the `release/vmm/` folder (required for FPGA hardware communication)
+
 #### 🚨 Note
 
-- If you have issues installing make on Windows you can follow this [guide](https://gist.github.com/evanwill/0207876c3243bbb6863e65ec5dc3f058#make)
+- If you have issues installing `make` on Windows you can follow this [guide](https://gist.github.com/evanwill/0207876c3243bbb6863e65ec5dc3f058#make)
 - Attacker PC can either be running Windows OR Linux. Victim PC is expected to run Windows.
 
 ## 📡 Share radar
@@ -67,3 +71,13 @@ To get the latest offsets you can use the [cs2-dumper](https://github.com/a2x/cs
 If you don't want to dump them yourself, you can use the offsets from [offsets.rs](https://github.com/a2x/cs2-dumper/blob/main/output/offsets.rs) and [client.dll.hpp](https://github.com/a2x/cs2-dumper/blob/main/output/client.dll.hpp).
 
 You can also use the github action offset update script to automaticly update the offstes.
+
+## 📄 License
+
+This project includes compiled binaries and assets from third-party open-source projects:
+
+- **MemProcFS** by [@ufrisk](https://github.com/ufrisk/MemProcFS) - Licensed under [AGPL-3.0](https://github.com/ufrisk/MemProcFS/blob/master/LICENSE)
+- **LeechCore** by [@ufrisk](https://github.com/ufrisk/LeechCore) - Licensed under [GPL-3.0](https://github.com/ufrisk/LeechCore/blob/master/LICENSE)
+- **CS2 React HUD** by [@lexogrine](https://github.com/lexogrine/cs2-react-hud) - Licensed under [MIT](https://github.com/lexogrine/cs2-react-hud/blob/main/LICENSE) - Radar map assets and coordinate configurations
+
+I'm grateful to Ulf Frisk for these excellent memory acquisition and analysis libraries, and to Lexogrine for the high-quality radar assets that make this project possible.

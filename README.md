@@ -8,7 +8,7 @@ _Fork of [CS2_DMA_Radar](https://github.com/MoZiHao/CS2_DMA_Radar) with some imp
 ![gif](https://github.com/rabume/cs2-dma-radar/assets/19410629/c2d6130c-7d67-49a1-8617-aeef07b148fc)
 
 > If you just want to use the radar, you can download the latest release [here](https://github.com/rabume/cs2-dma-radar/releases)
-> Requirements to run latest release: [JDK 21](https://adoptium.net/temurin/releases/?os=windows&arch=x64&package=jdk&version=21)
+> Requirements to run latest release: [JDK 21](https://adoptium.net/temurin/releases/?os=windows&arch=x64&package=jdk&version=21) and when running on Windows the [FTDI D3XX drivers](https://ftdichip.com/drivers/d3xx-drivers/) in the 'vmm' folder.
 
 ## 🚀 Usage
 

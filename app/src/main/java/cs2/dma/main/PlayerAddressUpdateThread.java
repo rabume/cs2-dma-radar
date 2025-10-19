@@ -21,15 +21,14 @@ public class PlayerAddressUpdateThread extends Thread {
     private long dwEntityList;
 
     // Offsets
-    private static long m_iHealth = 0x0; 
-    private static long m_iPawnArmor = 0x0; 
-    private static long m_lifeState = 0x0; 
-    private static long m_angEyeAngles = 0x0; 
-    private static long m_iTeamNum = 0x0; 
-    private static long m_hPlayerPawn = 0x0; 
+    private static long m_iHealth = 0x0;
+    private static long m_iPawnArmor = 0x0;
+    private static long m_lifeState = 0x0;
+    private static long m_angEyeAngles = 0x0;
+    private static long m_iTeamNum = 0x0;
+    private static long m_hPlayerPawn = 0x0;
     private static long m_vOldOrigin = 0x0; // PlayerPosition X //+ 0x4 Y //+ 0x8 Z
     private static long m_iCompTeammateColor = 0x0;
-    
 
     static {
         try {
@@ -59,7 +58,6 @@ public class PlayerAddressUpdateThread extends Thread {
             m_hPlayerPawn += Long.parseLong(map.get("m_hPlayerPawn").replace("0x", ""), 16);
             m_vOldOrigin += Long.parseLong(map.get("m_vOldOrigin").replace("0x", ""), 16);
             m_iCompTeammateColor += Long.parseLong(map.get("m_iCompTeammateColor").replace("0x", ""), 16);
-            
 
             System.out.println("[+] m_iHealth: " + m_iHealth);
             System.out.println("[+] m_iPawnArmor: " + m_iPawnArmor);
@@ -69,7 +67,6 @@ public class PlayerAddressUpdateThread extends Thread {
             System.out.println("[+] m_hPlayerPawn: " + m_hPlayerPawn);
             System.out.println("[+] m_vOldOrigin: " + m_vOldOrigin);
             System.out.println("[+] m_iCompTeammateColor: " + m_iCompTeammateColor);
-            
 
             parser.close();
         } catch (Exception e) {
@@ -112,7 +109,7 @@ public class PlayerAddressUpdateThread extends Thread {
 
     @Override
     public void run() {
-        long EntityAddress = memoryTool.readAddress(EntityList + (index + 1) * 0x78, 8);
+        long EntityAddress = memoryTool.readAddress(EntityList + (index + 1) * 0x70, 8);
         if (EntityAddress == 0)
             return;
         long EntityPawnListEntry = memoryTool.readAddress(clientAddress + dwEntityList, 8);
@@ -122,11 +119,11 @@ public class PlayerAddressUpdateThread extends Thread {
         if (Pawn == 0)
             return;
 
-            //color teammates
+        // color teammates
         int compTeammateColor = memoryTool.readInt(EntityAddress + m_iCompTeammateColor, 4);
 
         EntityPawnListEntry = memoryTool.readAddress(EntityPawnListEntry + 0x10 + 8 * ((Pawn & 0x7FFF) >> 9), 8);
-        Pawn = memoryTool.readAddress(EntityPawnListEntry + 0x78 * (Pawn & 0x1FF), 8);
+        Pawn = memoryTool.readAddress(EntityPawnListEntry + 0x70 * (Pawn & 0x1FF), 8);
         if (Pawn == 0)
             return;
         float localPlayerZ = memoryTool.readFloat(LocalPlayerController + m_vOldOrigin + 0x8, 4);
@@ -141,7 +138,7 @@ public class PlayerAddressUpdateThread extends Thread {
                     teamId,
                     memoryTool.readInt(Pawn + m_iHealth, 4),
                     memoryTool.readInt(Pawn + m_iPawnArmor, 4),
-                    memoryTool.readInt(Pawn + m_lifeState  , 4)==256,
+                    memoryTool.readInt(Pawn + m_lifeState, 4) == 256,
                     LocalPlayerController == Pawn,
                     memoryTool.readInt(LocalPlayerController + m_iTeamNum, 4) != teamId,
                     memoryTool.readFloat(Pawn + m_vOldOrigin + 0x4, 4),
@@ -149,8 +146,7 @@ public class PlayerAddressUpdateThread extends Thread {
                     playerZ,
                     90 - memoryTool.readFloat(Pawn + m_angEyeAngles + 0x4, 8),
                     levelDv < levelHeight,
-                    compTeammateColor
-            );
+                    compTeammateColor);
         } else {
             float angle = memoryTool.readFloat(LocalPlayerController + m_angEyeAngles + 0x4, 8) - 90;
             int teamId = memoryTool.readInt(EntityAddress + m_iTeamNum, 4);
@@ -169,7 +165,7 @@ public class PlayerAddressUpdateThread extends Thread {
                     teamId,
                     memoryTool.readInt(Pawn + m_iHealth, 4),
                     memoryTool.readInt(Pawn + m_iPawnArmor, 4),
-                    memoryTool.readInt(Pawn + m_lifeState  , 4)==256,
+                    memoryTool.readInt(Pawn + m_lifeState, 4) == 256,
                     LocalPlayerController == Pawn,
                     memoryTool.readInt(LocalPlayerController + m_iTeamNum, 4) != teamId,
                     newX,
@@ -177,8 +173,7 @@ public class PlayerAddressUpdateThread extends Thread {
                     playerZ,
                     90 - memoryTool.readFloat(Pawn + m_angEyeAngles + 0x4, 8) + angle,
                     levelDv < levelHeight,
-                    compTeammateColor
-            );
+                    compTeammateColor);
         }
     }
 

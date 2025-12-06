@@ -13,7 +13,7 @@
         "leaflet.pm": "^2.2.0",
         "rollup-plugin-postcss": "^4.0.2",
         "vue": "^3.2.8",
-        "ws": "^8.16.0"
+        "ws": "^8.17.1"
     },
     "devDependencies": {
         "@types/ws": "^8.5.10",

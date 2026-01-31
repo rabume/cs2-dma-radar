@@ -63,6 +63,7 @@ import de_nuke_lower_radar from '/src/assets/map/de_nuke_lower_radar.png'
 import de_overpass_radar from '/src/assets/map/de_overpass_radar.png'
 import de_vertigo_radar from '/src/assets/map/de_vertigo_radar.png'
 import de_vertigo_lower_radar from '/src/assets/map/de_vertigo_lower_radar.png'
+import de_anubis_radar from '/src/assets/map/de_anubis_radar.png'
 
 const teammateIcons = {
     0: teammateIcon0,
@@ -133,6 +134,13 @@ const mapRadar = {
         bounds: [
             [-237, -244],
             [233, 206]
+        ]
+    },
+    de_anubis: {
+        map: de_anubis_radar,
+        bounds: [
+            [-231, -275],
+            [370, 255]
         ]
     }
 }

@@ -14,7 +14,7 @@ public class GameDataManager {
     private static long dwEntityList = 0x0;
     private static long dwGameTypes = 0x0;
     private static long dwGlobalVars = 0x0;
-    private static final long GLOBAL_VARS_MAPNAME_OFFSET = 0x230;
+    private static final long GLOBAL_VARS_MAPNAME_OFFSET = 0x0188;
 
     static {
         try {
@@ -46,7 +46,7 @@ public class GameDataManager {
         }
     }
 
-    private String knowMap = "de_ancient,de_dust2,de_inferno,de_mirage,de_nuke,de_overpass,de_train,de_vertigo";
+    private String knowMap = "de_ancient,de_dust2,de_inferno,de_mirage,de_nuke,de_overpass,de_train,de_vertigo,de_anubis";
     private static String[] argvMemProcFS = { "", "-device", "FPGA" };
 
     private static IVmmProcess gameProcess;
@@ -196,27 +196,31 @@ public class GameDataManager {
 
     private String readCurrentMapName() {
         String result = attemptReadMapName(mapNameAddress + GLOBAL_VARS_MAPNAME_OFFSET);
-        return isValidMapName(result) ? result : "undefined";
+        boolean isValid = isValidMapName(result);
+        
+        return isValid ? result : "undefined";
     }
 
     private String attemptReadMapName(long mapNamePtrAddress) {
         try {
+            // Read the char* pointer at global_vars + 0x0188
             long namePtr = memoryTool.readAddress(mapNamePtrAddress, 8);
             if (namePtr == 0) {
                 return "";
             }
-
-            String raw = memoryTool.readString(namePtr - 2, 64);
+            
+            // Read string directly from the pointer (try without -2 first)
+            String raw = memoryTool.readString(namePtr, 64);
             if (raw == null || raw.isEmpty()) {
                 return "";
             }
-
-            return raw;
+            
+            return raw.trim();
         } catch (Exception e) {
+            System.out.println("[-] Error reading map name: " + e.getMessage());
             return "";
         }
     }
-
     private boolean isValidMapName(String name) {
         if (name == null || name.isEmpty() || "undefined".equals(name)) {
             return false;

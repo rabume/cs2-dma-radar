@@ -79,5 +79,6 @@ This project includes compiled binaries and assets from third-party open-source 
 - **MemProcFS** by [@ufrisk](https://github.com/ufrisk/MemProcFS) - Licensed under [AGPL-3.0](https://github.com/ufrisk/MemProcFS/blob/master/LICENSE)
 - **LeechCore** by [@ufrisk](https://github.com/ufrisk/LeechCore) - Licensed under [GPL-3.0](https://github.com/ufrisk/LeechCore/blob/master/LICENSE)
 - **CS2 React HUD** by [@lexogrine](https://github.com/lexogrine/cs2-react-hud) - Licensed under [MIT](https://github.com/lexogrine/cs2-react-hud/blob/main/LICENSE) - Radar map assets
+- **Boltobserv** by [@boltgolt](https://github.com/boltgolt/boltobserv) - Licensed under [GPL-3.0](https://github.com/boltgolt/boltobserv/blob/master/LICENSE) - Radar map assets
 
-I'm grateful to Ulf Frisk for these excellent memory acquisition and analysis libraries, and to Lexogrine for the high-quality radar assets that make this project possible.
+I'm grateful to Ulf Frisk for these excellent memory acquisition and analysis libraries, and to Lexogrine & Boltgolt for the high-quality radar assets that make this project possible.

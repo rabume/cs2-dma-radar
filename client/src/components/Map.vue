@@ -139,8 +139,8 @@ const mapRadar = {
     de_anubis: {
         map: de_anubis_radar,
         bounds: [
-            [-231, -275],
-            [370, 255]
+            [-330, -315],
+            [156, 185]
         ]
     }
 }

@@ -8,6 +8,7 @@ import vmm.IVmmProcess;
 import java.util.*;
 import java.io.FileReader;
 import com.alibaba.fastjson.parser.DefaultJSONParser;
+import cs2.dma.Offsets;
 
 public class GameDataManager {
     private static long dwLocalPlayerPawn = 0x0;
@@ -17,6 +18,7 @@ public class GameDataManager {
     private static final long GLOBAL_VARS_MAPNAME_OFFSET = 0x0188;
 
     static {
+        Offsets.updateOffsets();
         try {
             FileReader reader = new FileReader("offsets.json");
             char[] buf = new char[1024];
@@ -139,56 +141,57 @@ public class GameDataManager {
         }
     }
 
-    public void initPlayerInfo() {
-        try {
-            if (!refreshGameData() || !processMonitor.isCurrentProcessValid()) {
-                if (!initializeGameData()) {
-                    playerInfoList = new ArrayList<>();
-                    return;
+public void initPlayerInfo() {
+    try {
+        if (!refreshGameData()) {
+            System.out.println("[*] Waiting for game...");
+            while (true) {
+                try { Thread.sleep(1000); } catch (InterruptedException e) { Thread.currentThread().interrupt(); return; }
+                if (refreshGameData()) {
+                    System.out.println("[+] Game ready.");
+                    break;
                 }
             }
-            mapName = readCurrentMapName();
-
-            LocalPlayerController = memoryTool.readAddress(clientAddress + dwLocalPlayerPawn, 8);
-            if (LocalPlayerController == 0) {
-                return;
-            }
-
-            List<PlayerInfo> list = new ArrayList<>();
-            List<PlayerAddressUpdateThread> pautList = new ArrayList<>();
-            boolean isKnowMap = mapName != null && !"".equals(mapName) && knowMap.indexOf(mapName) != -1;
-
-            for (int i = 0; i < 64; i++) {
-                PlayerAddressUpdateThread updateThread = new PlayerAddressUpdateThread();
-                updateThread.setIndex(i);
-                updateThread.setMemoryTool(memoryTool);
-                updateThread.setClientAddress(clientAddress);
-                updateThread.setEntityList(EntityList);
-                updateThread.setDwEntityList(dwEntityList);
-                updateThread.setLocalPlayerController(LocalPlayerController);
-                updateThread.setKnowMap(isKnowMap);
-                updateThread.start();
-                pautList.add(updateThread);
-            }
-
-            pautList.forEach(pItem -> {
-                try {
-                    pItem.join();
-                    PlayerInfo data = pItem.getPlayerInfo();
-                    if (data != null) {
-                        list.add(pItem.getPlayerInfo());
-                    }
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-            });
-
-            playerInfoList = list;
-        } catch (Exception e) {
-            System.out.println("[-] Error updating player info: " + e.getMessage());
-            playerInfoList = new ArrayList<>();
         }
+        
+        mapName = readCurrentMapName();
+        LocalPlayerController = memoryTool.readAddress(clientAddress + dwLocalPlayerPawn, 8);
+        if (LocalPlayerController == 0) return;
+
+        List<PlayerInfo> list = new ArrayList<>();
+        List<PlayerAddressUpdateThread> pautList = new ArrayList<>();
+        boolean isKnowMap = mapName != null && !mapName.isEmpty() && knowMap.contains(mapName);
+
+        for (int i = 0; i < 64; i++) {
+            PlayerAddressUpdateThread updateThread = new PlayerAddressUpdateThread();
+            updateThread.setIndex(i);
+            updateThread.setMemoryTool(memoryTool);
+            updateThread.setClientAddress(clientAddress);
+            updateThread.setEntityList(EntityList);
+            updateThread.setDwEntityList(dwEntityList);
+            updateThread.setLocalPlayerController(LocalPlayerController);
+            updateThread.setKnowMap(isKnowMap);
+            updateThread.start();
+            pautList.add(updateThread);
+        }
+
+        pautList.forEach(pItem -> {
+            try {
+                pItem.join();
+                PlayerInfo data = pItem.getPlayerInfo();
+                if (data != null) list.add(data);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        playerInfoList = list;
+
+    } catch (Exception e) {
+        System.out.println("[-] Error updating player info: " + e.getMessage());
+        playerInfoList = new ArrayList<>();
     }
+}
 
     public List<PlayerInfo> getPlayerInfoList() {
         return playerInfoList;

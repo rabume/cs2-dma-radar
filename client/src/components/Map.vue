@@ -186,23 +186,25 @@ export default {
             heartbeatOutgoing: 0,
             stompVersions: new Versions([Versions.V1_2]),
             brokerURL: wsUrl,
+            reconnectDelay: 2000,
             onConnect: () => {
+                console.log('[+] WebSocket connected')
                 client.subscribe('/topic/radar', (radar) => {
                     let msg = JSON.parse(radar.body)
                     this.gameInfo.mapName = msg.mapName
                     this.gameInfo.tick = msg.tick
+                    this.gameInfo.playerList = msg.playerList
                     this.tickTimes++
                     this.allTickVal += msg.tick
                     this.initPlayerList(msg.playerList)
                 })
             },
-            onWebSocketError: (error) => {
-                console.error('Error with websocket', error)
+            onDisconnect: () => {
+                console.log('[*] WebSocket disconnected, retrying...')
+                this.clearMarkers()
             },
-            onStompError: (frame) => {
-                console.error('Broker reported error: ' + frame.headers['message'])
-                console.error('Additional details: ' + frame.body)
-            }
+            onWebSocketError: (error) => console.error('WebSocket error', error),
+            onStompError: (frame) => console.error('STOMP error: ' + frame.headers['message'])
         })
 
         client.activate()
@@ -257,14 +259,22 @@ export default {
                 this.map.setView(this.imageOverLay.getBounds().getCenter())
             }
         },
+        clearMarkers() {
+            if (this.layerGroup != null) {
+                this.map.removeLayer(this.layerGroup)
+                this.layerGroup = null
+            }
+            this.MarkerList = []
+        },
         initUnKnowMap() {
             if (this.imageOverLay != null) {
                 this.allTickVal = 0
                 this.tickTimes = 0
                 this.map.removeLayer(this.imageOverLay)
                 this.imageOverLay = null
+                this.lastMapName = null
             }
-            // Initialize currentBounds for unknown maps
+            this.clearMarkers()
             this.currentBounds = JSON.parse(JSON.stringify(this.defaultBounds))
         },
         updatePlayerMarker(data, knowMap) {

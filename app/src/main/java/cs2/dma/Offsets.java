@@ -9,19 +9,6 @@ import java.nio.file.Path;
 import java.util.Scanner;
 
 public class Offsets {
-    private static long dwLocalPlayerPawn = 0x0;
-    private static long dwEntityList = 0x0;
-    private static long dwGameTypes = 0x0;
-    private static long dwGlobalVars = 0x0;
-    private static long m_iHealth = 0x0;
-    private static long m_iPawnArmor = 0x0;
-    private static long m_lifeState = 0x0;
-    private static long m_angEyeAngles = 0x0;
-    private static long m_iTeamNum = 0x0;
-    private static long m_hPlayerPawn = 0x0;
-    private static long m_vOldOrigin = 0x0;
-    private static long m_iCompTeammateColor = 0x0;
-
     public static void updateOffsets() {
         try {
             JSONObject offsets = fetchJson("https://raw.githubusercontent.com/a2x/cs2-dumper/main/output/offsets.json");
@@ -56,20 +43,6 @@ public class Offsets {
             } else {
                 System.out.println("[*] Offsets are already up to date.");
             }
-
-            // load into fields
-            dwLocalPlayerPawn  += Long.decode(newOffsets.getString("dwLocalPlayerPawn"));
-            dwEntityList       += Long.decode(newOffsets.getString("dwEntityList"));
-            dwGlobalVars       += Long.decode(newOffsets.getString("dwGlobalVars"));
-            dwGameTypes        += Long.decode(newOffsets.getString("dwGameTypes"));
-            m_iHealth          += Long.decode(newOffsets.getString("m_iHealth"));
-            m_iPawnArmor       += Long.decode(newOffsets.getString("m_iPawnArmor"));
-            m_lifeState        += Long.decode(newOffsets.getString("m_lifeState"));
-            m_angEyeAngles     += Long.decode(newOffsets.getString("m_angEyeAngles"));
-            m_iTeamNum         += Long.decode(newOffsets.getString("m_iTeamNum"));
-            m_hPlayerPawn      += Long.decode(newOffsets.getString("m_hPlayerPawn"));
-            m_vOldOrigin       += Long.decode(newOffsets.getString("m_vOldOrigin"));
-            m_iCompTeammateColor += Long.decode(newOffsets.getString("m_iCompTeammateColor"));
 
         } catch (Exception e) {
             System.out.println("[-] Failed to load offsets: " + e.getMessage());

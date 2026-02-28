@@ -139,8 +139,8 @@ const mapRadar = {
     de_anubis: {
         map: de_anubis_radar,
         bounds: [
-            [-330, -315],
-            [156, 185]
+            [-187, -263],
+            [313, 237]
         ]
     }
 }
@@ -268,11 +268,7 @@ export default {
         },
         initUnKnowMap() {
             if (this.imageOverLay != null) {
-                this.allTickVal = 0
-                this.tickTimes = 0
-                this.map.removeLayer(this.imageOverLay)
-                this.imageOverLay = null
-                this.lastMapName = null
+                return
             }
             this.clearMarkers()
             this.currentBounds = JSON.parse(JSON.stringify(this.defaultBounds))

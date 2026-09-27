@@ -1,14 +1,14 @@
 {
-  "dwLocalPlayerPawn": "0x23ccc08",
-  "dwEntityList": "0x2577be0",
-  "dwGameTypes": "0x1adf80",
-  "dwGlobalVars": "0x20b57c0",
+  "dwLocalPlayerPawn": "0x25606d8",
+  "dwEntityList": "0x27151a8",
+  "dwGameTypes": "0x1b0fd0",
+  "dwGlobalVars": "0x222bf88",
   "m_iHealth": "0x34c",
-  "m_iPawnArmor": "0x924",
+  "m_iPawnArmor": "0x93c",
   "m_lifeState": "0x354",
-  "m_angEyeAngles": "0x3350",
+  "m_angEyeAngles": "0x35f0",
   "m_iTeamNum": "0x3e7",
-  "m_hPlayerPawn": "0x914",
-  "m_vOldOrigin": "0x13b8",
-  "m_iCompTeammateColor": "0x850"
+  "m_hPlayerPawn": "0x92c",
+  "m_vOldOrigin": "0x14a4",
+  "m_iCompTeammateColor": "0x858"
 }

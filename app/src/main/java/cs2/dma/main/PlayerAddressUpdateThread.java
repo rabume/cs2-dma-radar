@@ -7,7 +7,9 @@ import java.util.*;
 import java.io.FileReader;
 import com.alibaba.fastjson.parser.DefaultJSONParser;
 
-public class PlayerAddressUpdateThread extends Thread {
+import java.util.concurrent.Callable;
+
+public class PlayerAddressUpdateThread implements Callable<PlayerInfo> {
     private int index;
     private PlayerInfo playerInfo;
     private boolean isKnowMap;
@@ -108,34 +110,31 @@ public class PlayerAddressUpdateThread extends Thread {
     }
 
     @Override
-    public void run() {
+    public PlayerInfo call() {
         long EntityAddress = memoryTool.readAddress(EntityList + (index + 1) * 0x70, 8);
         if (EntityAddress == 0)
-            return;
+            return null;
         long EntityPawnListEntry = memoryTool.readAddress(clientAddress + dwEntityList, 8);
         if (EntityPawnListEntry == 0)
-            return;
+            return null;
         long Pawn = memoryTool.readAddress(EntityAddress + m_hPlayerPawn, 8);
         if (Pawn == 0)
-            return;
+            return null;
 
-        // color teammates
         int compTeammateColor = memoryTool.readInt(EntityAddress + m_iCompTeammateColor, 4);
-
         EntityPawnListEntry = memoryTool.readAddress(EntityPawnListEntry + 0x10 + 8 * ((Pawn & 0x7FFF) >> 9), 8);
         Pawn = memoryTool.readAddress(EntityPawnListEntry + 0x70 * (Pawn & 0x1FF), 8);
         if (Pawn == 0)
-            return;
+            return null;
+
         float localPlayerZ = memoryTool.readFloat(LocalPlayerController + m_vOldOrigin + 0x8, 4);
+
         if (isKnowMap) {
             int teamId = memoryTool.readInt(EntityAddress + m_iTeamNum, 4);
             float playerZ = memoryTool.readFloat(Pawn + m_vOldOrigin + 0x8, 4);
-            float levelDv = playerZ - localPlayerZ;
-            levelDv = (levelDv < 0) ? -levelDv : levelDv;
+            float levelDv = Math.abs(playerZ - localPlayerZ);
             playerInfo = new PlayerInfo(
-                    EntityAddress,
-                    Pawn,
-                    teamId,
+                    EntityAddress, Pawn, teamId,
                     memoryTool.readInt(Pawn + m_iHealth, 4),
                     memoryTool.readInt(Pawn + m_iPawnArmor, 4),
                     memoryTool.readInt(Pawn + m_lifeState, 4) == 256,
@@ -152,29 +151,24 @@ public class PlayerAddressUpdateThread extends Thread {
             int teamId = memoryTool.readInt(EntityAddress + m_iTeamNum, 4);
             float pX = memoryTool.readFloat(Pawn + m_vOldOrigin + 0x4, 4);
             float pY = memoryTool.readFloat(Pawn + m_vOldOrigin, 4);
-            float newX = pX * (float) Math.cos(Math.toRadians(angle)) - pY * (float) Math.sin(Math.toRadians(angle));
-            float newY = pX * (float) Math.sin(Math.toRadians(angle)) + pY * (float) Math.cos(Math.toRadians(angle));
-
+            double rad = Math.toRadians(angle);
+            float newX = pX * (float) Math.cos(rad) - pY * (float) Math.sin(rad);
+            float newY = pX * (float) Math.sin(rad) + pY * (float) Math.cos(rad);
             float playerZ = memoryTool.readFloat(Pawn + m_vOldOrigin + 0x8, 4);
-            float levelDv = playerZ - localPlayerZ;
-            levelDv = (levelDv < 0) ? -levelDv : levelDv;
-
+            float levelDv = Math.abs(playerZ - localPlayerZ);
             playerInfo = new PlayerInfo(
-                    EntityAddress,
-                    Pawn,
-                    teamId,
+                    EntityAddress, Pawn, teamId,
                     memoryTool.readInt(Pawn + m_iHealth, 4),
                     memoryTool.readInt(Pawn + m_iPawnArmor, 4),
                     memoryTool.readInt(Pawn + m_lifeState, 4) == 256,
                     LocalPlayerController == Pawn,
                     memoryTool.readInt(LocalPlayerController + m_iTeamNum, 4) != teamId,
-                    newX,
-                    newY,
-                    playerZ,
+                    newX, newY, playerZ,
                     90 - memoryTool.readFloat(Pawn + m_angEyeAngles + 0x4, 8) + angle,
                     levelDv < levelHeight,
                     compTeammateColor);
         }
-    }
 
+        return playerInfo;
+    }
 }

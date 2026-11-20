@@ -1,8 +1,8 @@
 {
-  "dwLocalPlayerPawn": "0x2553d38",
-  "dwEntityList": "0x2709010",
+  "dwLocalPlayerPawn": "0x2557538",
+  "dwEntityList": "0x270c680",
   "dwGameTypes": "0x1aefc0",
-  "dwGlobalVars": "0x2221ab8",
+  "dwGlobalVars": "0x2223ad0",
   "m_iHealth": "0x34c",
   "m_iPawnArmor": "0x93c",
   "m_lifeState": "0x354",
